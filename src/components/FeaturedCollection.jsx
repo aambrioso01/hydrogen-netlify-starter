@@ -4,10 +4,10 @@ import {Image, Link} from '@shopify/hydrogen';
  * A shared component that defines a single featured collection to display on a storefront
  */
 export default function FeaturedCollection({collection}) {
-  return collection ? (
+  return null; {/* collection ? (
     <div className="shadow-xl rounded-xl grid grid-cols-1 lg:grid-cols-2 items-center bg-white overflow-hidden">
       {collection.image ? (
-        <Image width="622" height="465" data={collection.image} />
+        <Image width="622" height="465" image={collection.image} />
       ) : null}
       <div className="px-10 py-10 lg:py-0">
         <h2 className="text-gray-700 text-3xl font-bold mb-5">
@@ -22,5 +22,5 @@ export default function FeaturedCollection({collection}) {
         </Link>
       </div>
     </div>
-  ) : null;
+      ) : */};
 }

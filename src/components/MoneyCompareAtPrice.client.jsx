@@ -1,14 +1,17 @@
-import {useMoney} from '@shopify/hydrogen/client';
+import {Money} from '@shopify/hydrogen/client';
 
 /**
- * A client component that renders a product's compare at price
+ * A client component that renders a `Money` component for a product's compare at price
  */
 export default function MoneyCompareAtPrice({money}) {
-  const {amount, currencyNarrowSymbol} = useMoney(money);
   return (
-    <span className="line-through text-lg mr-2.5 text-gray-500">
-      {currencyNarrowSymbol}
-      {amount}
-    </span>
+    <Money money={money}>
+      {({amount, currencyNarrowSymbol}) => (
+        <span className="line-through text-lg mr-2.5 text-gray-500">
+          {currencyNarrowSymbol}
+          {amount}
+        </span>
+      )}
+    </Money>
   );
 }

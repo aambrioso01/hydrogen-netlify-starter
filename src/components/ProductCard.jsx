@@ -1,4 +1,3 @@
-import {Suspense} from 'react';
 import {Image, Link} from '@shopify/hydrogen';
 
 import MoneyCompareAtPrice from './MoneyCompareAtPrice.client';
@@ -21,7 +20,7 @@ export default function ProductCard({product}) {
           {selectedVariant.image ? (
             <Image
               className="bg-white absolute w-full h-full transition-all duration-500 ease-in-out transform bg-center bg-cover object-center object-contain hover:scale-110"
-              data={selectedVariant.image}
+              image={selectedVariant.image}
             />
           ) : null}
           {!selectedVariant?.availableForSale && (
@@ -41,13 +40,9 @@ export default function ProductCard({product}) {
 
         <div className="flex ">
           {selectedVariant.compareAtPriceV2 && (
-            <Suspense fallback={null}>
-              <MoneyCompareAtPrice money={selectedVariant.compareAtPriceV2} />
-            </Suspense>
+            <MoneyCompareAtPrice money={selectedVariant.compareAtPriceV2} />
           )}
-          <Suspense fallback={null}>
-            <MoneyPrice money={selectedVariant.priceV2} />
-          </Suspense>
+          <MoneyPrice money={selectedVariant.priceV2} />
         </div>
       </Link>
     </div>
