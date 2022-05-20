@@ -1,10 +1,9 @@
 import {
-  useShop,
   useShopQuery,
   flattenConnection,
+  ProductProviderFragment,
+  Image,
   Link,
-  Seo,
-  CacheDays,
 } from '@shopify/hydrogen';
 import gql from 'graphql-tag';
 
@@ -13,15 +12,13 @@ import FeaturedCollection from '../components/FeaturedCollection';
 import ProductCard from '../components/ProductCard';
 import Welcome from '../components/Welcome.server';
 import {Suspense} from 'react';
+import Collection from './collections/[handle].server';
 
 export default function Index({country = {isoCode: 'US'}}) {
   return (
     <Layout hero={<GradientBackground />}>
-      <Suspense fallback={null}>
-        <SeoForHomepage />
-      </Suspense>
       <div className="relative mb-12">
-        <Welcome />
+        {/* <Welcome /> */}
         <Suspense fallback={<BoxFallback />}>
           <FeaturedProductsBox country={country} />
         </Suspense>
@@ -33,82 +30,62 @@ export default function Index({country = {isoCode: 'US'}}) {
   );
 }
 
-function SeoForHomepage() {
-  const {
-    data: {
-      shop: {title, description},
-    },
-  } = useShopQuery({
-    query: SEO_QUERY,
-    cache: CacheDays(),
-    preload: true,
-  });
-
-  return (
-    <Seo
-      type="homepage"
-      data={{
-        title,
-        description,
-      }}
-    />
-  );
-}
-
 function BoxFallback() {
   return <div className="bg-white p-12 shadow-xl rounded-xl mb-10 h-40"></div>;
 }
 
 function FeaturedProductsBox({country}) {
-  const {languageCode} = useShop();
-
   const {data} = useShopQuery({
     query: QUERY,
     variables: {
       country: country.isoCode,
-      language: languageCode,
     },
-    preload: true,
   });
 
   const collections = data ? flattenConnection(data.collections) : [];
   const featuredProductsCollection = collections[0];
-  const featuredProducts = featuredProductsCollection
+  var  featuredProducts = featuredProductsCollection
     ? flattenConnection(featuredProductsCollection.products)
     : null;
 
   return (
-    <div className="bg-white p-12 shadow-xl rounded-xl mb-10">
-      {featuredProductsCollection ? (
+    <div className="bg-rose-200 p-12 shadow-xl rounded-xl mb-10">
+      {collections ? (
         <>
-          <div className="flex justify-between items-center mb-8 text-md font-medium">
-            <span className="text-black uppercase">
-              {featuredProductsCollection.title}
-            </span>
-            <span className="hidden md:inline-flex">
+          {collections.map((collection) => (
+            <div key={collection}>
+              <div className="flex justify-between items-center mb-8 text-md font-medium">
+              <span className="text-black uppercase">
+                {collection.title}
+              </span>
+              <span className="hidden md:inline-flex">
+                <Link
+                  to={`/collections/${collection.handle}`}
+                  className="text-blue-600 hover:underline"
+                >
+                  Shop all
+                </Link>
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+
+              {flattenConnection(collection.products).map((product) => (
+                <div key={product.id}>
+                  <ProductCard product={product} />
+                </div>
+              ))}
+            </div>
+            <div className="md:hidden text-center">
               <Link
-                to={`/collections/${featuredProductsCollection.handle}`}
-                className="text-blue-600 hover:underline"
+                to={`/collections/${collection.handle}`}
+                className="text-blue-600"
               >
                 Shop all
               </Link>
-            </span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
-            {featuredProducts.map((product) => (
-              <div key={product.id}>
-                <ProductCard product={product} />
-              </div>
-            ))}
-          </div>
-          <div className="md:hidden text-center">
-            <Link
-              to={`/collections/${featuredProductsCollection.handle}`}
-              className="text-blue-600"
-            >
-              Shop all
-            </Link>
-          </div>
+            </div>
+            </div>
+          ))}
+          
         </>
       ) : null}
     </div>
@@ -116,15 +93,11 @@ function FeaturedProductsBox({country}) {
 }
 
 function FeaturedCollectionBox({country}) {
-  const {languageCode} = useShop();
-
   const {data} = useShopQuery({
     query: QUERY,
     variables: {
       country: country.isoCode,
-      language: languageCode,
     },
-    preload: true,
   });
 
   const collections = data ? flattenConnection(data.collections) : [];
@@ -136,8 +109,8 @@ function FeaturedCollectionBox({country}) {
 
 function GradientBackground() {
   return (
-    <div className="fixed top-0 w-full h-3/5 overflow-hidden">
-      <div className="absolute w-full h-full bg-gradient-to-t from-gray-50 z-10" />
+    <div className="fixed top-0 w-full h-full overflow-hidden">
+      <div className="absolute w-full h-full bg-gradient-to-t from-pink-300 z-10" />
 
       <svg
         viewBox="0 0 960 743"
@@ -189,60 +162,35 @@ function GradientBackground() {
   );
 }
 
-const SEO_QUERY = gql`
-  query homeShopInfo {
-    shop {
-      description
-    }
-  }
-`;
-
 const QUERY = gql`
-  query indexContent($country: CountryCode, $language: LanguageCode)
-  @inContext(country: $country, language: $language) {
-    collections(first: 2) {
+  query indexContent(
+    $country: CountryCode
+    $numCollections: Int = 10
+    $numProducts: Int = 3
+    $includeReferenceMetafieldDetails: Boolean = false
+    $numProductMetafields: Int = 0
+    $numProductVariants: Int = 250
+    $numProductMedia: Int = 1
+    $numProductVariantMetafields: Int = 10
+    $numProductVariantSellingPlanAllocations: Int = 0
+    $numProductSellingPlanGroups: Int = 0
+    $numProductSellingPlans: Int = 0
+  ) @inContext(country: $country) {
+    collections(first: $numCollections) {
       edges {
         node {
+          descriptionHtml
+          description
           handle
           id
           title
           image {
-            id
-            url
-            altText
-            width
-            height
+            ...ImageFragment
           }
-          products(first: 3) {
+          products(first: $numProducts) {
             edges {
               node {
-                handle
-                id
-                title
-                variants(first: 1) {
-                  edges {
-                    node {
-                      id
-                      title
-                      availableForSale
-                      image {
-                        id
-                        url
-                        altText
-                        width
-                        height
-                      }
-                      priceV2 {
-                        currencyCode
-                        amount
-                      }
-                      compareAtPriceV2 {
-                        currencyCode
-                        amount
-                      }
-                    }
-                  }
-                }
+                ...ProductProviderFragment
               }
             }
           }
@@ -250,4 +198,7 @@ const QUERY = gql`
       }
     }
   }
+
+  ${ProductProviderFragment}
+  ${Image.Fragment}
 `;
