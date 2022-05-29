@@ -1,4 +1,9 @@
-import {useShopQuery, flattenConnection, Link} from '@shopify/hydrogen';
+import {
+  useShop,
+  useShopQuery,
+  flattenConnection,
+  Link,
+} from '@shopify/hydrogen';
 import gql from 'graphql-tag';
 import {Suspense} from 'react';
 
@@ -39,7 +44,13 @@ function BoxFallback() {
 }
 
 function StorefrontInfo() {
-  const {data} = useShopQuery({query: QUERY});
+  const {languageCode} = useShop();
+
+  const {data} = useShopQuery({
+    query: QUERY,
+    variables: {language: languageCode},
+    preload: true,
+  });
   const shopName = data ? data.shop.name : '';
   const products = data && flattenConnection(data.products);
   const collections = data && flattenConnection(data.collections);
@@ -52,7 +63,6 @@ function StorefrontInfo() {
     <div className="bg-white p-12 shadow-xl rounded-xl text-gray-900">
       <p className="text-md font-medium uppercase mb-4">Connected Storefront</p>
       <h2 className="text-2xl font-bold mb-4">{shopName}</h2>
-      <h1> {collections.length} </h1>
       <p className="text-md">
         {pluralize(totalProducts, 'Product')}
         {', '}
@@ -74,7 +84,7 @@ function StorefrontInfo() {
       )}
       <hr className="my-4" />
       <a
-        href="https://shopify.dev/custom-storefronts/hydrogen/getting-started#update-information-about-your-shopify-storefront"
+        href="https://shopify.dev/custom-storefronts/hydrogen/getting-started/create#step-2-update-information-about-your-shopify-storefront"
         className="text-md inline-flex items-center text-blue-700 font-medium hover:underline"
         target="_blank"
         rel="noreferrer"
@@ -87,7 +97,13 @@ function StorefrontInfo() {
 }
 
 function TemplateLinks() {
-  const {data} = useShopQuery({query: QUERY});
+  const {languageCode} = useShop();
+
+  const {data} = useShopQuery({
+    query: QUERY,
+    variables: {language: languageCode},
+    preload: true,
+  });
   const products = data && flattenConnection(data.products);
   const collections = data && flattenConnection(data.collections);
 
@@ -134,38 +150,52 @@ function TemplateLinks() {
  */
 export default function Welcome() {
   return (
-    <div className="text-gray-900 pt-16 rounded-[40px] my-16 px-4 xl:px-12 -mx-4 xl:-mx-12">
+    <div className="text-gray-900 pt-16 rounded-[40px] my-16 px-4 xl:px-12 bg-gradient-to-b from-white -mx-4 xl:-mx-12">
       <div className="text-center mb-16">
-        <h1 className="text-white font-extrabold mb-4 text-5xl md:text-7xl">
-          Welcome
+        <h1 className="font-extrabold mb-4 text-5xl md:text-7xl">
+          Hello, Hydrogen
         </h1>
-        <p className="text-lg mb-8 text-rose-500">
-          Creativity for the soul
+        <p className="text-lg mb-8">
+          Welcome to your custom storefront. Let&rsquo;s get building.
         </p>
         <div className="flex flex-col lg:flex-row justify-center items-center gap-8 text-gray-700">
-          <img src='sparkcles-header.png' width="50%"/>
+          <DocsButton
+            url="https://shopify.dev/custom-storefronts/hydrogen"
+            label="Browse Hydrogen documentation"
+          />
+          <DocsButton url="/graphql" label="Open the GraphiQL explorer" />
+          <DocsButton
+            url="https://github.com/Shopify/hydrogen-examples"
+            label="Explore Hydrogen examples"
+          />
         </div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
-
+        <Suspense fallback={<BoxFallback />}>
+          <StorefrontInfo />
+        </Suspense>
+        <Suspense fallback={<BoxFallback />}>
+          <TemplateLinks />
+        </Suspense>
       </div>
     </div>
   );
 }
 
 const QUERY = gql`
-  query welcomeContent {
+  query welcomeContent($language: LanguageCode)
+  @inContext(language: $language) {
     shop {
       name
     }
-    products(first: 250) {
+    products(first: 3) {
       edges {
         node {
           handle
         }
       }
     }
-    collections(first: 250) {
+    collections(first: 3) {
       edges {
         node {
           handle
